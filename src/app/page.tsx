@@ -72,11 +72,11 @@ export default function Home() {
 
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
-      const newScroll = Math.max(0, Math.min(15, scroll + e.deltaY * 0.05));
+      const newScroll = Math.max(0, Math.min(15, scroll + e.deltaY * 0.0098));
       smoothScroll.current = scroll;
       gsap.to(smoothScroll, {
         current: newScroll,
-        duration: 1,
+        duration: 0.5,
         ease: "power2.out",
         onUpdate: () => {
           setScroll(smoothScroll.current);
@@ -88,13 +88,11 @@ export default function Home() {
       touchStartY.current = e.touches[0].clientY;
     };
 
-    let speed = isMobile ? 0.05 : 0.01;
-
     const handleTouchMove = (e: TouchEvent) => {
       e.preventDefault();
       const touchY = e.touches[0].clientY;
       const deltaY = touchStartY.current - touchY;
-      const newScroll = Math.max(0, Math.min(15, scroll + deltaY * speed));
+      const newScroll = Math.max(0, Math.min(15, scroll + deltaY * 0.05));
       smoothScroll.current = scroll;
       gsap.to(smoothScroll, {
         current: newScroll,
@@ -193,7 +191,7 @@ export default function Home() {
 
 function TitleComponent() {
   return (
-    <h1 className="text-5xl font-bold text-center w-full h-full flex items-center justify-center border-1">
+    <h1 className="text-5xl font-bold text-center w-full h-full flex items-center justify-center border-4">
       Z-SCROLL
     </h1>
   );
