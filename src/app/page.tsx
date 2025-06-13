@@ -1,27 +1,8 @@
 "use client";
-
 import { AuroraBackground } from "@/components/bg/aurora-background";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
-
-let arr: any[][] = [
-  [TitleComponent, 0, 0, 600, 300, 0],
-  [InfoComponent, 10, 30, 384, 192, 1],
-  [ImageComponent, -10, 27, 400, 300, 2],
-  [QuoteComponent, 15, -20, 300, 150, 3],
-  [StatsComponent, -20, 15, 250, 200, 3],
-  [CardComponent, 25, 10, 320, 180, 4],
-  [TimelineComponent, -15, -25, 400, 250, 5],
-  [FeatureComponent, 20, 20, 280, 160, 6],
-  [GalleryComponent, -25, 5, 450, 300, 7],
-  [TestimonialComponent, 30, -15, 350, 200, 8],
-  [TeamComponent, -30, 30, 400, 250, 9],
-  [ContactComponent, 0, -30, 320, 200, 10],
-  [NewsComponent, -20, -10, 380, 220, 11],
-  [ProjectsComponent, 25, 25, 420, 280, 12],
-  [TechnologyComponent, -15, 15, 340, 190, 13],
-];
 
 function skewedGaussian(
   x: number,
@@ -35,14 +16,34 @@ function skewedGaussian(
 }
 
 export default function Home() {
+  let arr: any[][] = [
+    [TitleComponent, 0, 0, 360, 180, 0],
+    [InfoComponent, 10, 30, 384, 192, 1],
+    [ImageComponent, -10, 27, 400, 300, 2],
+    [QuoteComponent, 15, -20, 300, 150, 3],
+    [StatsComponent, -20, 15, 250, 200, 3],
+    [CardComponent, 25, 10, 320, 180, 4],
+    [TimelineComponent, -15, -25, 400, 250, 5],
+    [FeatureComponent, 20, 20, 280, 160, 6],
+    [GalleryComponent, -25, 5, 450, 300, 7],
+    [TestimonialComponent, 30, -15, 350, 200, 8],
+    [TeamComponent, -30, 30, 400, 250, 9],
+    [ContactComponent, 0, -30, 320, 200, 10],
+    [NewsComponent, -20, -10, 380, 220, 11],
+    [ProjectsComponent, 25, 25, 420, 280, 12],
+    [TechnologyComponent, -15, 15, 340, 190, 13],
+  ];
+
   const [scroll, setScroll] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const smoothScroll = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef(0);
 
+  // Handle client-side mounting
   useEffect(() => {
-    // Move window checks to useEffect
+    setIsClient(true);
     const checkMobile = () => window.innerWidth < 768;
     setIsMobile(checkMobile());
 
@@ -55,11 +56,13 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    if (!isClient) return;
+
     const ctx = gsap.context(() => {
       // Set up smooth scrolling animation
       gsap.to(smoothScroll, {
         current: scroll,
-        duration: 1,
+        duration: isMobile ? 0.3 : 1,
         ease: "power2.out",
         onUpdate: () => {
           setScroll(smoothScroll.current);
@@ -85,11 +88,13 @@ export default function Home() {
       touchStartY.current = e.touches[0].clientY;
     };
 
+    let speed = isMobile ? 0.05 : 0.01;
+
     const handleTouchMove = (e: TouchEvent) => {
       e.preventDefault();
       const touchY = e.touches[0].clientY;
       const deltaY = touchStartY.current - touchY;
-      const newScroll = Math.max(0, Math.min(15, scroll + deltaY * 0.01));
+      const newScroll = Math.max(0, Math.min(15, scroll + deltaY * speed));
       smoothScroll.current = scroll;
       gsap.to(smoothScroll, {
         current: newScroll,
@@ -121,14 +126,32 @@ export default function Home() {
         container.removeEventListener("touchmove", handleTouchMove);
       }
     };
-  }, [scroll]);
+  }, [scroll, isClient]);
+
+  // Don't render dynamic content until client-side
+  if (!isClient) {
+    return (
+      <div className="w-dvw h-dvh overflow-hidden relative">
+        <AuroraBackground
+          className="w-dvw h-dvh z-[-2147483647]"
+          children={undefined}
+        />
+        <div className="fixed right-4 top-4 z-50">
+          <span className="text-white text-sm bg-black/30 px-3 py-1 rounded-full backdrop-blur-sm">
+            Loading...
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div ref={containerRef} className="w-dvw h-dvh overflow-hidden relative">
       <AuroraBackground
         className="w-dvw h-dvh z-[-2147483647]"
+        style={{ display: isMobile ? `none` : `block` }}
         children={undefined}
-      ></AuroraBackground>
+      />
       <div className="fixed right-4 top-4 z-50">
         <span className="text-white text-sm bg-black/30 px-3 py-1 rounded-full backdrop-blur-sm">
           Depth: {scroll.toFixed(2)}
@@ -170,11 +193,12 @@ export default function Home() {
 
 function TitleComponent() {
   return (
-    <h1 className="text-7xl font-bold text-center w-full h-full flex items-center justify-center border-1">
+    <h1 className="text-5xl font-bold text-center w-full h-full flex items-center justify-center border-1">
       Z-SCROLL
     </h1>
   );
 }
+
 function InfoComponent() {
   return (
     <h1 className="text-sm text-center w-full h-full flex items-center justify-center border-1 p-8">
@@ -184,6 +208,7 @@ function InfoComponent() {
     </h1>
   );
 }
+
 function ImageComponent() {
   return (
     <Image
@@ -194,6 +219,7 @@ function ImageComponent() {
     />
   );
 }
+
 function QuoteComponent() {
   return (
     <div className="text-xl italic text-center w-full h-full flex items-center justify-center p-6  border-1  ">
