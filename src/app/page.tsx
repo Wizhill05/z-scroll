@@ -10,17 +10,17 @@ let arr: any[][] = [
   [InfoComponent, 10, 30, 384, 192, 1],
   [ImageComponent, -10, 27, 400, 300, 2],
   [QuoteComponent, 15, -20, 300, 150, 3],
-  [StatsComponent, -20, 15, 250, 200, 4],
-  [CardComponent, 25, 10, 320, 180, 5],
-  [TimelineComponent, -15, -25, 400, 250, 6],
-  [FeatureComponent, 20, 20, 280, 160, 7],
-  [GalleryComponent, -25, 5, 450, 300, 8],
-  [TestimonialComponent, 30, -15, 350, 200, 9],
-  [TeamComponent, -30, 30, 400, 250, 10],
-  [ContactComponent, 0, -30, 320, 200, 11],
-  [NewsComponent, -20, -10, 380, 220, 12],
-  [ProjectsComponent, 25, 25, 420, 280, 13],
-  [TechnologyComponent, -15, 15, 340, 190, 14],
+  [StatsComponent, -20, 15, 250, 200, 3],
+  [CardComponent, 25, 10, 320, 180, 4],
+  [TimelineComponent, -15, -25, 400, 250, 5],
+  [FeatureComponent, 20, 20, 280, 160, 6],
+  [GalleryComponent, -25, 5, 450, 300, 7],
+  [TestimonialComponent, 30, -15, 350, 200, 8],
+  [TeamComponent, -30, 30, 400, 250, 9],
+  [ContactComponent, 0, -30, 320, 200, 10],
+  [NewsComponent, -20, -10, 380, 220, 11],
+  [ProjectsComponent, 25, 25, 420, 280, 12],
+  [TechnologyComponent, -15, 15, 340, 190, 13],
 ];
 
 function skewedGaussian(
@@ -36,8 +36,23 @@ function skewedGaussian(
 
 export default function Home() {
   const [scroll, setScroll] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
   const smoothScroll = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const touchStartY = useRef(0);
+
+  useEffect(() => {
+    // Move window checks to useEffect
+    const checkMobile = () => window.innerWidth < 768;
+    setIsMobile(checkMobile());
+
+    const handleResize = () => {
+      setIsMobile(checkMobile());
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -66,15 +81,44 @@ export default function Home() {
       });
     };
 
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartY.current = e.touches[0].clientY;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      e.preventDefault();
+      const touchY = e.touches[0].clientY;
+      const deltaY = touchStartY.current - touchY;
+      const newScroll = Math.max(0, Math.min(15, scroll + deltaY * 0.01));
+      smoothScroll.current = scroll;
+      gsap.to(smoothScroll, {
+        current: newScroll,
+        duration: 1,
+        ease: "power2.out",
+        onUpdate: () => {
+          setScroll(smoothScroll.current);
+        },
+      });
+      touchStartY.current = touchY;
+    };
+
     const container = containerRef.current;
     if (container) {
       container.addEventListener("wheel", handleWheel, { passive: false });
+      container.addEventListener("touchstart", handleTouchStart, {
+        passive: false,
+      });
+      container.addEventListener("touchmove", handleTouchMove, {
+        passive: false,
+      });
     }
 
     return () => {
       ctx.revert();
       if (container) {
         container.removeEventListener("wheel", handleWheel);
+        container.removeEventListener("touchstart", handleTouchStart);
+        container.removeEventListener("touchmove", handleTouchMove);
       }
     };
   }, [scroll]);
@@ -93,7 +137,7 @@ export default function Home() {
       {arr.map(([Component, x, y, w, h, z], i) => (
         <div
           key={i}
-          className="absolute backdrop-blur-2xl"
+          className={`absolute ${!isMobile ? "backdrop-blur-2xl" : ""}`}
           style={{
             display: Math.abs(scroll - z) > 2 ? "none" : "block",
             left: `calc(50dvw + ${(Math.pow(6, scroll - z) * x) / 2}% - ${
@@ -105,12 +149,16 @@ export default function Home() {
             width: w,
             height: h,
             zIndex: -z,
-            filter:
-              Math.abs(scroll - z) < 0
-                ? `blur(${Math.pow(Math.abs(z - scroll), 2) * 0.4}px)`
-                : `blur(${Math.pow(Math.abs(z - scroll) + 0.4, 6)}px)`,
+            filter: isMobile
+              ? "none"
+              : Math.abs(scroll - z) < 0
+              ? `blur(${Math.pow(Math.abs(z - scroll), 2) * 0.4}px)`
+              : `blur(${Math.pow(Math.abs(z - scroll) + 0.4, 6)}px)`,
             scale: `calc(${Math.exp(scroll - z)})`,
             opacity: skewedGaussian(scroll - z, 1, 0, 1, 0.5),
+            background: isMobile
+              ? `rgba(255,255,255,0.05)`
+              : `rgba(255,255,255,0)`,
           }}
         >
           <Component />
@@ -122,14 +170,14 @@ export default function Home() {
 
 function TitleComponent() {
   return (
-    <h1 className="text-7xl font-bold text-center w-full h-full flex items-center justify-center border-1 backdrop-blur-2xl">
+    <h1 className="text-7xl font-bold text-center w-full h-full flex items-center justify-center border-1">
       Z-SCROLL
     </h1>
   );
 }
 function InfoComponent() {
   return (
-    <h1 className="text-sm text-center w-full h-full flex items-center justify-center border-1 p-8 backdrop-blur-2xl">
+    <h1 className="text-sm text-center w-full h-full flex items-center justify-center border-1 p-8">
       "z-scroll" can refer to two different things: a component used in the
       zircle-ui library for creating circular scrollbars and a visual effect of
       scrolling along the z-axis (depth) in 3D web pages.
@@ -156,7 +204,7 @@ function QuoteComponent() {
 
 function StatsComponent() {
   return (
-    <div className="grid grid-cols-2 gap-4 p-6  border-1   w-full h-full">
+    <div className="grid grid-cols-2 gap-4 p-6  border-1 w-full h-full">
       <div className="text-center">
         <div className="text-2xl font-bold">100+</div>
         <div className="text-sm">Projects</div>
